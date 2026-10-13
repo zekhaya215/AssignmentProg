@@ -1,0 +1,14 @@
+﻿@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div style="text-align:center; margin-top:50px;">
+    <h2 style="color:green;">Admin is Logged In </h2>
+    <hr />
+    <p><b>Admin Email:</b> @User.Identity.Name</p>
+    <p><b>Role:</b> Admin</p>
+    <p><b>Login Time:</b> @DateTime.Now.ToString("HH:mm:ss")</p>
+    <br />
+    <a class="btn btn-primary" asp-controller="Assignments" asp-action="Index">Manage Assignments</a>
+    <a class="btn btn-dark" asp-controller="Assignments" asp-action="Create">Create Assignment</a>
+</div>
