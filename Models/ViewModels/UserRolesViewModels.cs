@@ -1,4 +1,4 @@
-﻿namespace RunWayy.Models.ViewModels
+﻿namespace AssignmentProg.Models.ViewModels
 {
     public class UserRolesViewModel
     {

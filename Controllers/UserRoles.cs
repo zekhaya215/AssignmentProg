@@ -1,118 +1,188 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AssignmentProg.Models;
+using AssignmentProg.Models.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using RunWayy.Models.ViewModels;
 
-namespace RunWayy.Controllers
+namespace AssignmentProg.Controllers
 {
     [Authorize(Roles = "Admin")]
     public class UserRoles : Controller
     {
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
 
         public UserRoles(
-            UserManager<IdentityUser> userManager,
+            UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager)
         {
             _userManager = userManager;
             _roleManager = roleManager;
         }
 
-        // GET: /UserRoles
+        // Display all users and their roles.
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var users = await _userManager.Users.ToListAsync();
-            var userRolesViewModel = new List<UserRolesViewModel>();
+            var users = _userManager.Users.ToList();
+            var model = new List<UserRolesViewModel>();
 
             foreach (var user in users)
             {
-                var thisViewModel = new UserRolesViewModel
+                var roles = await _userManager.GetRolesAsync(user);
+
+                model.Add(new UserRolesViewModel
                 {
                     UserId = user.Id,
                     Email = user.Email ?? "",
                     UserName = user.UserName ?? "",
-                    Roles = await _userManager.GetRolesAsync(user)
-                };
-
-                userRolesViewModel.Add(thisViewModel);
-            }
-
-            return View(userRolesViewModel);
-        }
-
-        // GET: /UserRoles/Manage?userId=xxx
-        public async Task<IActionResult> Manage(string userId)
-        {
-            ViewBag.userId = userId;
-
-            var user = await _userManager.FindByIdAsync(userId);
-
-            if (user == null)
-            {
-                ViewBag.ErrorMessage = $"User with Id = {userId} cannot be found!!";
-                return View("Not Found");
-            }
-
-            ViewBag.UserName = user.UserName;
-
-            var model = new List<ManageUserRolesViewModel>();
-
-            foreach (var role in _roleManager.Roles.ToList())
-            {
-                var userRolesViewModel = new ManageUserRolesViewModel
-                {
-                    RoleId = role.Id,
-                    RoleName = role.Name ?? ""
-                };
-
-                if (await _userManager.IsInRoleAsync(user, role.Name!))
-                {
-                    userRolesViewModel.isSelected = true;
-                }
-                else
-                {
-                    userRolesViewModel.isSelected = false;
-                }
-
-                model.Add(userRolesViewModel);
+                    Roles = roles.ToList()
+                });
             }
 
             return View(model);
         }
-        //POST: UserRoles/Manager
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Manage(List<ManageUserRolesViewModel> model, string userId)
+        // Display the role management page for a user.
+        [HttpGet]
+        public async Task<IActionResult> Manage(string userId)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return BadRequest("User ID is required.");
+            }
+
             var user = await _userManager.FindByIdAsync(userId);
+
             if (user == null)
             {
-                return View("NotFound");
+                return NotFound("User not found.");
             }
 
-            var roles = await _userManager.GetRolesAsync(user);
-            var result = await _userManager.RemoveFromRolesAsync(user, roles);
+            var userRoles = await _userManager.GetRolesAsync(user);
+            var allRoles = _roleManager.Roles.ToList();
 
-            if (!result.Succeeded)
+            var model = allRoles.Select(role =>
+                new ManageUserRolesViewModel
+                {
+                    RoleId = role.Id,
+                    RoleName = role.Name ?? "",
+                    IsSelected = role.Name != null &&
+                                 userRoles.Contains(role.Name)
+                }).ToList();
+
+            ViewBag.UserId = user.Id;
+            ViewBag.UserName = user.UserName;
+
+            return View(model);
+        }
+
+        // Save the selected roles.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Manage(
+            string userId,
+            List<ManageUserRolesViewModel> model)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
             {
-                ModelState.AddModelError("", "Cannot remove user existing roles!");
-                return View(model);
+                return BadRequest("User ID is required.");
             }
 
-            result = await _userManager.AddToRolesAsync(user, model.Where(x => x.isSelected).Select(y => y.RoleName));
+            var user = await _userManager.FindByIdAsync(userId);
 
-            if (!result.Succeeded)
+            if (user == null)
             {
-                ModelState.AddModelError("", "Cannot add selected roles to user!");
-                return View(model);
+                return NotFound("User not found.");
             }
+
+            var selectedRoleNames = model
+                .Where(item => item.IsSelected)
+                .Select(item => item.RoleName)
+                .Distinct()
+                .ToList();
+
+            foreach (var roleName in selectedRoleNames)
+            {
+                if (!await _roleManager.RoleExistsAsync(roleName))
+                {
+                    ModelState.AddModelError(
+                        "",
+                        $"The role '{roleName}' does not exist.");
+
+                    return await ReloadManageView(user, model);
+                }
+            }
+
+            var currentRoles = await _userManager.GetRolesAsync(user);
+
+            // Prevent an administrator from removing their own Admin role.
+            var isCurrentUser = user.Id == _userManager.GetUserId(User);
+
+            if (isCurrentUser &&
+                currentRoles.Contains("Admin") &&
+                !selectedRoleNames.Contains("Admin"))
+            {
+                ModelState.AddModelError(
+                    "",
+                    "You cannot remove your own Admin role.");
+
+                return await ReloadManageView(user, model);
+            }
+
+            var rolesToRemove = currentRoles
+                .Except(selectedRoleNames)
+                .ToList();
+
+            var rolesToAdd = selectedRoleNames
+                .Except(currentRoles)
+                .ToList();
+
+            if (rolesToRemove.Any())
+            {
+                var removeResult = await _userManager.RemoveFromRolesAsync(
+                    user, rolesToRemove);
+
+                if (!removeResult.Succeeded)
+                {
+                    ModelState.AddModelError(
+                        "",
+                        string.Join("; ", removeResult.Errors
+                            .Select(error => error.Description)));
+
+                    return await ReloadManageView(user, model);
+                }
+            }
+
+            if (rolesToAdd.Any())
+            {
+                var addResult = await _userManager.AddToRolesAsync(
+                    user, rolesToAdd);
+
+                if (!addResult.Succeeded)
+                {
+                    ModelState.AddModelError(
+                        "",
+                        string.Join("; ", addResult.Errors
+                            .Select(error => error.Description)));
+
+                    return await ReloadManageView(user, model);
+                }
+            }
+
+            TempData["Success"] = "User roles updated successfully.";
 
             return RedirectToAction(nameof(Index));
         }
 
+        private async Task<IActionResult> ReloadManageView(
+            ApplicationUser user,
+            List<ManageUserRolesViewModel> model)
+        {
+            ViewBag.UserId = user.Id;
+            ViewBag.UserName = user.UserName;
 
+            return View("Manage", model);
+        }
     }
 }

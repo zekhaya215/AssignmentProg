@@ -15,9 +15,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
+builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
+        options.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+// Profile image service
 builder.Services.AddScoped<IProfileImageService, ProfileImageService>();
 
 builder.Services.AddControllersWithViews();
@@ -50,23 +53,42 @@ app.MapRazorPages();
 // ===== seeding block =====
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var services = scope.ServiceProvider;
+
+    var db = services.GetRequiredService<ApplicationDbContext>();
+
     await db.Database.MigrateAsync();
 
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+
+    // Create application roles
     var roles = new[] { "Admin", "Organiser", "Participant" };
+
     foreach (var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))
         {
-            await roleManager.CreateAsync(new IdentityRole(role));
+            var roleResult = await roleManager.CreateAsync(
+                new IdentityRole(role));
+
+            if (!roleResult.Succeeded)
+            {
+                var errors = string.Join(
+                    "; ",
+                    roleResult.Errors.Select(e => e.Description));
+
+                throw new InvalidOperationException(
+                    $"Failed to create role '{role}': {errors}");
+            }
         }
     }
 
+    // Create default administrator account
     string email = "admin@admin.com";
     string password = "Zekhaya215@";
+
     if (await userManager.FindByEmailAsync(email) == null)
     {
         var user = new ApplicationUser
@@ -78,23 +100,51 @@ using (var scope = app.Services.CreateScope())
             LastName = "User",
             Gender = Gender.Male
         };
+
         var createResult = await userManager.CreateAsync(user, password);
+
         if (createResult.Succeeded)
         {
-            await userManager.AddToRoleAsync(user, "Admin");
+            var roleResult = await userManager.AddToRoleAsync(user, "Admin");
+
+            if (!roleResult.Succeeded)
+            {
+                var errors = string.Join(
+                    "; ",
+                    roleResult.Errors.Select(e => e.Description));
+
+                throw new InvalidOperationException(
+                    $"Failed to assign Admin role: {errors}");
+            }
+        }
+        else
+        {
+            var errors = string.Join(
+                "; ",
+                createResult.Errors.Select(e => e.Description));
+
+            throw new InvalidOperationException(
+                $"Failed to create administrator account: {errors}");
         }
     }
 
-    var participantUser = await userManager.FindByEmailAsync("manxusazekhaya@gmail.com");
+    // Ensure the specified user has the Participant role
+    var participantUser = await userManager.FindByEmailAsync(
+        "manxusazekhaya@gmail.com");
+
     if (participantUser != null)
     {
         if (await userManager.IsInRoleAsync(participantUser, "Admin"))
         {
-            await userManager.RemoveFromRoleAsync(participantUser, "Admin");
+            await userManager.RemoveFromRoleAsync(
+                participantUser, "Admin");
         }
-        if (!await userManager.IsInRoleAsync(participantUser, "Participant"))
+
+        if (!await userManager.IsInRoleAsync(
+                participantUser, "Participant"))
         {
-            await userManager.AddToRoleAsync(participantUser, "Participant");
+            await userManager.AddToRoleAsync(
+                participantUser, "Participant");
         }
     }
 }
