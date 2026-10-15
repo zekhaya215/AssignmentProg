@@ -1,10 +1,10 @@
 ﻿# RunWay – ASP.NET Core MVC Event Management System
 
-**RunWay** is an ASP.NET Core MVC web application designed to manage events, users, and role-based access. The application uses Entity Framework Core, SQL Server, and ASP.NET Core Identity to provide authentication, authorisation, and user role management.
+ is an ASP.NET Core MVC web application designed to manage events, users, and role-based access. The application uses Entity Framework Core, SQL Server, and ASP.NET Core Identity to provide authentication, authorisation, and user role management.
 
 The project follows the Model-View-Controller (MVC) architecture, with a Services layer to separate business logic from controllers and views.
 
-**Developer:** Zekhaya Manxusa  
+**Developer: Zekhaya Manxusa  
 **Year:** 2026  
 **Framework:** ASP.NET Core MVC (.NET 8)
 
@@ -148,13 +148,12 @@ Can contain reusable business logic and functionality shared across controllers.
 
 Contains scaffolded ASP.NET Core Identity pages for registration, login, and account management.
 
-**wwwroot**
+
 
 Stores static assets such as CSS, JavaScript, and images.
 
 ---
-
-## 5. User Roles
+5. User Roles
 
 The application is designed to support three user roles.
 
@@ -184,11 +183,9 @@ using Microsoft.AspNetCore.Authorization;
 
 The roles must exist in the Identity database before users can be assigned to them.
 
----
 
-## 6. Getting Started
 
-### Prerequisites
+ Prerequisites
 
 Before running the application, ensure that you have installed:
 
@@ -197,7 +194,7 @@ Before running the application, ensure that you have installed:
 - SQL Server or SQL Server LocalDB.
 - Git, if you want to clone the repository from GitHub.
 
-### Step 1: Clone the Repository
+ Step 1: Clone the Repository
 
 Open a terminal and run:
 
@@ -223,15 +220,13 @@ Alternatively, navigate to the directory containing the `.csproj` file and run:
 dotnet restore
 ```
 
-### Step 3: Configure the Database
+ Step 3: Configure the Database
 
 Open `appsettings.json` and check the `DefaultConnection` connection string.
 
 Configure it for your local SQL Server instance.
 
-**Important:** Do not commit database passwords or other secrets to a public GitHub repository.
-
-### Step 4: Apply Database Migrations
+ Step 4: Apply Database Migrations
 
 If Entity Framework Core migrations are included in the project, run:
 
@@ -247,7 +242,7 @@ dotnet tool install --global dotnet-ef
 
 Use a tool version compatible with your project's Entity Framework Core version.
 
-### Step 5: Run the Application
+ Step 5: Run the Application
 
 Run:
 
@@ -259,9 +254,7 @@ Open the local URL displayed in the terminal.
 
 The HTTPS address may differ depending on your project's launch settings.
 
----
-
-## 7. Database Setup
+ 7. Database Setup
 
 RunWay uses Entity Framework Core to communicate with its relational database.
 
@@ -285,9 +278,7 @@ dotnet ef database update
 
 Ensure that the correct startup project and database connection string are selected before applying migrations.
 
----
-
-## 8. Authentication and Registration
+ 8. Authentication and Registration
 
 ASP.NET Core Identity provides the application's authentication and account management functionality.
 
@@ -322,23 +313,20 @@ if (!roleResult.Succeeded)
 This example assumes that the user has already been created successfully and that the `Participant` role exists.
 
 If email confirmation is enabled, the application must be configured to handle the confirmation process correctly.
-
----
-
-## 9. Adding New Features
+9. Adding New Features
 
 New functionality can be developed using the existing MVC architecture.
 
 For example, adding event management functionality may involve the following steps:
 
-1. **Model:** Create or update the event entity.
-2. **Database:** Add the required entity configuration.
-3. **Migration:** Generate and apply a database migration if the schema changes.
-4. **Service:** Implement reusable business logic where appropriate.
-5. **ViewModel:** Define the data required by the user interface.
-6. **Controller:** Add actions to handle requests.
-7. **Views:** Create the required Razor views.
-8. **Testing:** Test the functionality and verify authorisation rules.
+1. Model:** Create or update the event entity.
+2. Database:** Add the required entity configuration.
+3. Migration:** Generate and apply a database migration if the schema changes.
+4. Service:** Implement reusable business logic where appropriate.
+5. ViewModel:** Define the data required by the user interface.
+6. Controller:** Add actions to handle requests.
+7. Views:** Create the required Razor views.
+8. Testing:** Test the functionality and verify authorisation rules.
 
 Example commands for a new migration:
 
@@ -349,9 +337,7 @@ dotnet ef database update
 
 The commands should only be used when the corresponding model changes have been implemented.
 
----
-
-## 10. Security Considerations
+10. Security Considerations
 
 Security is an important part of an application that manages user accounts and roles.
 
@@ -370,18 +356,10 @@ The following practices are recommended:
 
 Before publishing the project, inspect the repository for sensitive configuration values.
 
----
 
-## 11. Author
+11. Author
 
-**Developer:** Zekhaya Manxusa  
-**Project:** RunWay – ASP.NET Core MVC Event Management System  
-**Year:** 2026
+Developer:** Zekhaya Manxusa  
+Project:** RunWay – ASP.NET Core MVC Event Management System  
+Year:** 2026
 
----
-
-## Licence
-
-A licence has not been specified for this project.
-
-If you intend to make the source code available for reuse, consider adding an appropriate open-source licence. Otherwise, you can leave this section unchanged until a licence has been selected.
