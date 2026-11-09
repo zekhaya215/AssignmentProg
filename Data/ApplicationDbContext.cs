@@ -11,7 +11,7 @@ namespace AssignmentProg.Data
 
         // Part 1
         public DbSet<Assignment> Assignments { get; set; }
-
+        
         // Part 2
         public DbSet<Event> Events => Set<Event>();
         public DbSet<Category> Categories => Set<Category>();
