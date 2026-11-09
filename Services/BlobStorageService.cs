@@ -10,7 +10,7 @@ public class BlobStorageService
     private BlobContainerClient? _container;
 
     public BlobStorageService(IConfiguration cfg) => _cfg = cfg;
-
+    
     private BlobContainerClient Container()
     {
         if (_container == null)
