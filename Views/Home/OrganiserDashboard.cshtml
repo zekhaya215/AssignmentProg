@@ -1,0 +1,13 @@
+@{
+    ViewData["Title"] = "Organiser Dashboard";
+}
+
+<div style="text-align:center; margin-top:50px;">
+    <h2 style="color:#b36b00;">Organiser is Logged In</h2>
+    <hr />
+    <p><b>Organiser Email:</b> @User.Identity?.Name</p>
+    <p><b>Role:</b> Organiser</p>
+    <br />
+    <a class="btn btn-primary" asp-controller="Dashboard" asp-action="Index">Go to my dashboard</a>
+    <a class="btn btn-dark" asp-controller="Events" asp-action="Create">Create Event</a>
+</div>
