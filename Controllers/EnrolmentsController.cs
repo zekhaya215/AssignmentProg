@@ -12,6 +12,7 @@ using AssignmentProg.Models.ViewModels;
 namespace AssignmentProg.Controllers;
 
 [Authorize]
+
 public class EnrolmentsController : Controller
 {
     private readonly ApplicationDbContext _db;
